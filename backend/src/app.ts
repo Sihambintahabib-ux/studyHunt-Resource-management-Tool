@@ -13,7 +13,7 @@ app.use(cors());
 
 // Testing route
 app.get("/", (req: Request, res: Response) => {
-  res.send("Event Management Server is running!");
+  res.send("💌Study Management Server is running!✅");
 });
 
 // Not found route

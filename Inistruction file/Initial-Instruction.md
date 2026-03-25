@@ -17,6 +17,12 @@
 [env](#env--srcconfigindexts)
 
 ---
+[modules](#modules)
+
+---
+[controllers folder](#controllers-folder)
+
+---
 
 [utility](#utility)
 
@@ -28,9 +34,9 @@
 
 ## Table of content :
 
-| 1            | 2                    | 3                          | 4       | 5          | 6                         | 7               | 8                               | 9                               | 10                        |
-| ------------ | -------------------- | -------------------------- | ------- | ---------- | ------------------------- | --------------- | ------------------------------- | ------------------------------- | ------------------------- |
-| Folder setup | Install Dependencies | configure-typescript + env | utility | middleware | Auth module + User module | Resource module | Review module + Bookmark module | Review module + Bookmark module | Auth module + User module |
+| 1            | 2                    | 3                          | 4      | 4       | 5          | 6                         | 7               | 8                               | 9                               | 10                        |
+| ------------ | -------------------- | -------------------------- | ------ | ------- | ---------- | ------------------------- | --------------- | ------------------------------- | ------------------------------- | ------------------------- |
+| Folder setup | Install Dependencies | configure-typescript + env | module | utility | middleware | Auth module + User module | Resource module | Review module + Bookmark module | Review module + Bookmark module | Auth module + User module |
 
 # Create the backend folder structure
 
@@ -272,8 +278,11 @@ Browsers and Node.js (in production) don't run TypeScript directly; they run Jav
    This runs the production-ready code from the `dist/` folder.
 
 ---
+
 # server.ts + app.ts — Entry Points
+
 ## add src/app.ts
+
 ```bash
 import cors from 'cors';
 import express, { Application, Request, Response } from 'express';
@@ -303,12 +312,13 @@ app.use((req: Request, res: Response) => {
 
 export default app;
 ```
+
 ## add src/server.ts
+
 ```bash
 import mongoose from 'mongoose';
 import app from './app';
-import config from './config';
-
+import config from "./app/config";
 async function main() {
   try {
     if (!config.database_url) {
@@ -329,6 +339,7 @@ async function main() {
 
 main();
 ```
+
 # .env + src/config/index.ts
 
 ```bash
@@ -342,8 +353,32 @@ NODE_ENV=development
 BCRYPT_SALT_ROUNDS=12
 ```
 
+```bash
+
+###---backend/.env---###
+
+# ── Server ─────────────────────────────────────
+PORT = 5000 ← keep as is
+NODE_ENV = development ← keep as is
+
+# ── Database ─────────────────────────────────────
+MONGO_URI = mongodb://localhost:27017/studynest ← change this!
+#-Authentication
+JWT_SECRET = REPLACE_WITH_32+_CHAR_RANDOM_STRING ← change this!
+JWT_EXPIRES_IN = 30d ← keep as is
+BCRYPT_SALT_ROUNDS = 12 ← keep as is
+
+# ── AI ─────────────────────────────────────
+GEMINI_API_KEY = AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ← get from Google
+
+# ── CORS ─────────────────────────────────────
+FRONTEND_URL = http://localhost:3000 ← keep as is
+```
+
 > [!IMPORTANT]
 > collect all the env information from necessary site
+
+- [MONGO_URI ](https://github.com/Sihambintahabib-ux/git-page-set-up-/blob/main/serversite.md#:~:text=mongodb%20cluster%20add%3A&text=mongodb%20cluster%20add%3A):
 
 ## src/config/index.ts
 
@@ -363,6 +398,401 @@ export default {
 };
 
 ```
+
+---
+> [!NOTE]
+>
+> MVC PATTERN : MODULE VIEW CONTROLLER PATTER 
+# modules
+## resource
+### step 1: modules/types/resource.interface.ts - define all the type here
+- model er khetre type cappital letter hoy `String` , ar typescript e type define korar somory type small letter hoy like `string`.
+```bash
+import { Schema } from "mongoose";
+
+export interface IResource {
+  title: string;
+  description: string;
+  fileUrl: string;
+  thumbnail?: string;
+  type: "pdf" | "video" | "notes" | "cheatsheet" | "test";
+  subject: string;
+  topic: string;
+  difficulty: "beginner" | "intermediate" | "advanced";
+ tags?: string[];
+  uploadedBy: Schema.Types.ObjectId | string;
+  downloads?: number;
+  views?: number;
+  averageRating?: number;
+  reviewCount?: number;
+  status?: "pending" | "approved" | "rejected";
+}
+
+```
+
+### step 2:modules/Resource/resource.model.ts - use all the defined types and create schema
+- model er khetre type cappital letter hoy `String` , ar typescript e type define korar somory type small letter hoy like `string`.
+
+```bash
+import { Schema, model } from 'mongoose';
+import { IResource } from '../types/event.interface';
+
+const resourceSchema = new Schema<IResource>({
+  title:         { type: String, required: true, index: true },
+  description:   { type: String, required: true },
+  fileUrl:       { type: String, required: true },
+  thumbnail:     { type: String, default: '' },
+  type:          { type: String, enum: ['pdf','video','notes','cheatsheet','test'], required: true },
+  subject:       { type: String, required: true, index: true },
+  topic:         { type: String, required: true },
+  difficulty:    { type: String, enum: ['beginner','intermediate','advanced'], required: true },
+  tags:          [String],
+  uploadedBy:    { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  downloads:     { type: Number, default: 0 },
+  views:         { type: Number, default: 0 },
+  averageRating: { type: Number, default: 0 },
+  reviewCount:   { type: Number, default: 0 },
+  status:        { type: String, enum: ['pending','approved','rejected'], default: 'pending' },
+}, { timestamps: true });
+
+export const Resource = model<IResource>('Resource', resourceSchema);
+
+```
+
+## user 
+### step 1: modules/types/user.interface.ts - define all the type here
+
+```BASH
+export interface IUser {
+  name: string;
+  email: string;
+  password?: string;
+  role: "admin" | "user";
+}
+
+```
+### step 2:modules/User/user.model.ts - use all the defined types and create schema
+
+```BASH
+import bcrypt from "bcrypt";
+
+
+import { Schema, model } from "mongoose";
+import { IUser } from "../../types/user.interface";
+import config from "../../config";
+
+const userSchema = new Schema<IUser>(
+  {
+    name: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true, select: false },
+    role: { type: String, enum: ["admin", "user"], default: "user" },
+  },
+  {
+    timestamps: true,
+  },
+);
+
+// Pre-save middleware / hook : will run before saving a document
+userSchema.pre("save", async function (next) {
+  // 'this' refers to the document about to be saved
+  const user = this;
+
+  // Only hash the password if it has been modified (or is new)
+  if (!user.isModified("password")) {
+    return next();
+  }
+
+  // Hash password using bcrypt salt rounds from config
+  user.password = await bcrypt.hash(
+    user.password as string,
+    Number(config.bcrypt_salt_rounds),
+  );
+
+  next();
+});
+
+// Post-save middleware / hook : will run directly after saving a document
+userSchema.post("save", function (user, next) {
+  // doc is the document that was just saved
+  // For example, we want to erase password field before returning doc after creation
+  // Or simply log the information
+  console.log(
+    `[Post-Save Hook]: A new user was created with email: ${user.email}`,
+  );
+
+  // Note: Modifying doc here won't save it to DB (unless you call .save() again),
+  // but it does affect the object returned from the save() method in controller.
+  user.password = "";
+
+  next();
+});
+
+export const User = model<IUser>("User", userSchema);
+
+```
+
+##
+
+---
+
+# controllers folder
+
+## resource controller
+
+```bash
+import { Request, Response } from "express";
+import { Resource } from "../modules/Resource/resource.model";
+
+// Create Resource
+const createResource = async (req: Request, res: Response) => {
+  try {
+    const savedResource = await Resource.create(req.body);
+    res.status(201).json({
+      success: true,
+      message: "Resource created successfully",
+      data: savedResource,
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to create Resource",
+      error: err.message,
+    });
+  }
+};
+
+// Get all Resource
+const getResources = async (req: Request, res: Response) => {
+  try {
+    const resources = await Resource.find();
+    res.status(200).json({
+      success: true,
+      message: "Resources fetched successfully",
+      data: resources,
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch resources",
+      error: err.message,
+    });
+  }
+};
+
+// Get single resource
+const getResourceById = async (req: Request, res: Response) => {
+  try {
+    const resource = await Resource.findById(req.params.id);
+    if (!resource) {
+      return res.status(404).json({
+        success: false,
+        message: "resource not found",
+      });
+    }
+    res.status(200).json({
+      success: true,
+      message: "resource fetched successfully",
+      data: resource,
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch resource",
+      error: err.message,
+    });
+  }
+};
+
+// Update resource
+const updateresource = async (req: Request, res: Response) => {
+  try {
+    const updatedResource = await Resource.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: true },
+    );
+    if (!updatedResource) {
+      return res.status(404).json({
+        success: false,
+        message: "Resource not found",
+      });
+    }
+    res.status(200).json({
+      success: true,
+      message: "Resource updated successfully",
+      data: updatedResource,
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to update Resource",
+      error: err.message,
+    });
+  }
+};
+
+// Delete Resource
+const deleteResource = async (req: Request, res: Response) => {
+  try {
+    const deletedResource = await Resource.findByIdAndDelete(req.params.id);
+    if (!deletedResource) {
+      return res.status(404).json({
+        success: false,
+        message: "Resource not found",
+      });
+    }
+    res.status(200).json({
+      success: true,
+      message: "Resource deleted successfully",
+      data: null,
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete Resource",
+      error: err.message,
+    });
+  }
+};
+
+export const resourceControllers = {
+  createResource,
+  getResources,
+  getResourceById,
+  updateresource,
+  deleteResource,
+};
+
+```
+
+## user controller
+
+```bash
+import bcrypt from 'bcrypt';
+import { Request, Response } from 'express';
+import jwt, { Secret } from 'jsonwebtoken';
+import config from '../config';
+import { User } from '../models/user.model';
+
+// Register user
+const register = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    
+    // Check if user already exists
+    const isUserExist = await User.findOne({ email });
+
+    if (isUserExist) {
+      return res.status(400).json({
+        success: false,
+        message: 'User already exists!',
+      });
+    }
+
+    const savedUser = await User.create(req.body);
+    
+    // Generate token
+    const token = jwt.sign(
+      { email: savedUser.email, role: savedUser.role },
+      config.jwt_secret as Secret,
+      { expiresIn: config.jwt_expires_in as any }
+    );
+
+    // Omit password from response
+    const userResponse = savedUser.toObject();
+    delete userResponse.password;
+
+    res.status(201).json({
+      success: true,
+      message: 'User registered successfully',
+      data: userResponse,
+      token,
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to register user',
+      error: err.message,
+    });
+  }
+};
+
+// Login user
+const login = async (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body;
+    
+    // Check if user exists
+    const user = await User.findOne({ email }).select('+password');
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password',
+      });
+    }
+
+    // Compare passwords
+    const isPasswordMatch = await bcrypt.compare(password, user.password as string);
+    if (!isPasswordMatch) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password',
+      });
+    }
+
+    // Generate token
+    const token = jwt.sign(
+      { email: user.email, role: user.role },
+      config.jwt_secret as Secret,
+      { expiresIn: config.jwt_expires_in as any }
+    );
+
+    // Omit password from response
+    const userResponse = user.toObject();
+    delete userResponse.password;
+
+    res.status(200).json({
+      success: true,
+      message: 'User logged in successfully',
+      token,
+      data: userResponse, 
+    });
+
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to login',
+      error: err.message,
+    });
+  }
+};
+
+// Get all users
+const getUsers = async (req: Request, res: Response) => {
+  try {
+    const users = await User.find().select('-password');
+    res.status(200).json({
+      success: true,
+      message: 'Users fetched successfully',
+      data: users,
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch users',
+      error: err.message,
+    });
+  }
+};
+
+export const userControllers = {
+  register,
+  login,
+  getUsers,
+};
+```
+
 ---
 
 # utility

@@ -1,3 +1,19 @@
+
+
+- jwt token
+- [uploadedBy: Schema.Types.ObjectId | string;](https://mongoosejs.com/docs/typescript/schemas.html)
+-
+
+---
+
+62UzyQ4BqwpBDOtp
+
+studynest
+
+mongodb+srv://studynest:62UzyQ4BqwpBDOtp@cluster0.hohlyvu.mongodb.net/?appName=Cluster0
+
+---
+
 echo "# studyHunt-Resource-management-Tool" >> README.md
 git init
 git add .
