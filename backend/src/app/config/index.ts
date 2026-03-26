@@ -8,7 +8,7 @@ export default {
   database_url: process.env.MONGO_URI!,
   jwt_secret: process.env.JWT_SECRET!,
   jwt_expires_in: process.env.JWT_EXPIRES_IN || "30d",
-  geminiKey: process.env.GEMINI_API_KEY!,
+  gemini_api_key: process.env.GEMINI_API_KEY!,
   frontendUrl: process.env.FRONTEND_URL!,
   bcrypt_salt_rounds: process.env.BCRYPT_SALT_ROUNDS || "12",
 };

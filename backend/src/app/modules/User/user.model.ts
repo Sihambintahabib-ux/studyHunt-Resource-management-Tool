@@ -22,7 +22,7 @@ userSchema.pre("save", async function (next) {
 
   // Only hash the password if it has been modified (or is new)
   if (!user.isModified("password")) {
-    return next();
+    // return next();
   }
 
   // Hash password using bcrypt salt rounds from config
@@ -31,7 +31,8 @@ userSchema.pre("save", async function (next) {
     Number(config.bcrypt_salt_rounds),
   );
 
-  next();
+  // next();
+  
 });
 
 // Post-save middleware / hook : will run directly after saving a document

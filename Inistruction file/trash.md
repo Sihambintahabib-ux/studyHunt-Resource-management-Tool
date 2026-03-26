@@ -1,5 +1,6 @@
 
-
+JWT_SECRET=studynest_super_secret_key_min_32_chars_long
+--- 
 - jwt token
 - [uploadedBy: Schema.Types.ObjectId | string;](https://mongoosejs.com/docs/typescript/schemas.html)
 -

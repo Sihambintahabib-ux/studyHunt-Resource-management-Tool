@@ -794,6 +794,156 @@ export const userControllers = {
 ```
 
 ---
+## ai controller
+
+
+```bash
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { Request, Response } from "express";
+import config from "../config";
+
+const generateDescription = async (req: Request, res: Response) => {
+  try {
+    const { title } = req.body;
+
+    if (!title) {
+      return res.status(400).json({
+        success: false,
+        message: "Event title is required to generate a description",
+      });
+    }
+
+    if (!config.gemini_api_key) {
+      return res.status(500).json({
+        success: false,
+        message: "Gemini API key is not configured",
+      });
+    }
+
+    // Initialize Gemini
+    const genAI = new GoogleGenerativeAI(config.gemini_api_key as string);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    const prompt = `Write a catchy and informative event description for an event titled: "${title}". Keep it around 100 words.`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+
+    res.status(200).json({
+      success: true,
+      message: "Description generated successfully",
+      data: text,
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to generate description",
+      error: err.message,
+    });
+  }
+};
+
+export const aiControllers = {
+  generateDescription,
+};
+
+
+```
+
+
+# router
+
+## index router
+```bash
+import express from "express";
+import { AiRoutes } from "./ai.route";
+import {  ResourceRoutes } from "./event.route";
+import { UserRoutes } from "./user.route";
+
+const router = express.Router();
+
+const moduleRoutes = [
+  {
+    path: "/resources",
+    route: ResourceRoutes,
+  },
+  {
+    path: "/users",
+    route: UserRoutes,
+  },
+  {
+    path: "/ai",
+    route: AiRoutes,
+  },
+];
+
+moduleRoutes.forEach((route) => router.use(route.path, route.route));
+
+export default router;
+
+```
+## resource router
+```bash
+import express from "express";
+import { resourceControllers } from "../controllers/event.controller";
+
+const router = express.Router();
+// Get all events
+router.get("/", resourceControllers.getResources);
+// Get single event
+router.get("/:id", resourceControllers.getResourceById);
+// Create event
+router.post("/", resourceControllers.createResource);
+// Update event
+router.put("/:id", resourceControllers.updateResource);
+// Delete event
+router.delete("/:id", resourceControllers.deleteResource);
+
+export const ResourceRoutes = router;
+
+```
+## ai router
+```bash
+import express from "express";
+import { aiControllers } from "../controllers/ai.controller";
+
+const router = express.Router();
+
+router.post("/generate-description", aiControllers.generateDescription);
+
+export const AiRoutes = router;
+
+```
+## user router
+```bash
+import express from "express";
+import { userControllers } from "../controllers/user.controller";
+
+const router = express.Router();
+
+// Register user
+router.post("/register", userControllers.register);
+// Login user
+router.post("/login", userControllers.login);
+// Get all users
+router.get("/", userControllers.getUsers);
+
+export const UserRoutes = router;
+
+```
+
+
+# [ai integration ](https://github.com/touhidcodes/Level-1-Express-Mongoose-Server/blob/main/docs/GEMINI_INTEGRATION.md)
+1. generate key 
+2. if api is not connected (error show)
+  - go to this website : [google claude](https://console.cloud.google.com/welcome?project=cosmic-decker-480606-r8)
+  - google claude/lib - [liabery](https://console.cloud.google.com/apis/library?referrer=search&project=cosmic-decker-480606-r8)
+  - search for generative ai - [generative ai](https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com?project=cosmic-decker-480606-r8)
+  ![alt text](image.png)
+3. add GEMINI_API_KEY to env file 
+4. export GEMINI_API_KEY from conflict/index.ts file
+5. ai [controller](#ai-controller) create 
 
 # utility
 

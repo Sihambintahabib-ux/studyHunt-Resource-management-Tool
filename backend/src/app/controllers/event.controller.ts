@@ -25,7 +25,7 @@ const getResources = async (req: Request, res: Response) => {
     const resources = await Resource.find();
     res.status(200).json({
       success: true,
-      message: "Resources fetched successfully",
+      message: "Resources.. fetched successfully",
       data: resources,
     });
   } catch (err: any) {
@@ -62,7 +62,7 @@ const getResourceById = async (req: Request, res: Response) => {
 };
 
 // Update resource
-const updateresource = async (req: Request, res: Response) => {
+const updateResource = async (req: Request, res: Response) => {
   try {
     const updatedResource = await Resource.findByIdAndUpdate(
       req.params.id,
@@ -117,6 +117,6 @@ export const resourceControllers = {
   createResource,
   getResources,
   getResourceById,
-  updateresource,
+  updateResource,
   deleteResource,
 };
